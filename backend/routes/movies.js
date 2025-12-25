@@ -86,6 +86,14 @@ router.get('/decision', async (req, res) => {
     const decision = await getMovieDecision(userId, movieData);
     console.log("📊 AI decision:", decision);
 
+    // If AI is unavailable, return only the error object
+    if (decision && decision.aiUnavailable) {
+      return res.json({
+        aiUnavailable: true,
+        message: decision.message,
+      });
+    }
+
     res.json({ movieData, decision });
 
   } catch (err) {

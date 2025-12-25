@@ -40,6 +40,19 @@ async function scrapeMovieDetails(title) {
         .map(s => s.trim())
         .filter(Boolean)
     ));
+
+    // After scraping RT and IMDb:
+    const rtReleaseDate = data.rottenTomatoes.releaseDate && data.rottenTomatoes.releaseDate !== 'N/A' ? data.rottenTomatoes.releaseDate : null;
+    const imdbReleaseDate = data.imdb.releaseDate && data.imdb.releaseDate !== 'N/A' ? data.imdb.releaseDate : null;
+
+    const releaseDate =
+      (data.rottenTomatoes.releaseDate && data.rottenTomatoes.releaseDate !== 'N/A' && data.rottenTomatoes.releaseDate.trim() !== '')
+        ? data.rottenTomatoes.releaseDate
+        : (data.imdb.releaseDate && data.imdb.releaseDate !== 'N/A' && data.imdb.releaseDate.trim() !== '')
+          ? data.imdb.releaseDate
+          : 'N/A';
+
+    data.releaseDate = releaseDate;
   } finally {
     await browser.close();
   }
@@ -49,7 +62,10 @@ async function scrapeMovieDetails(title) {
     oscars: data.oscars.length,
     genres: data.genres
   });
-  return data;
+  return {
+    ...data,
+    releaseDate: data.releaseDate
+  };
 }
 
 module.exports = { scrapeMovieDetails };

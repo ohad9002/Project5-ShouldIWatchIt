@@ -69,9 +69,11 @@ export const fetchMovies = async (
 };
 
 export interface DecisionResponse {
-  movieData: MovieData;
-  decision: string;
-  explanation: string;
+  movieData?: MovieData;
+  decision?: string;
+  explanation?: string;
+  aiUnavailable?: boolean;
+  message?: string;
 }
 
 /**
@@ -86,27 +88,58 @@ export const fetchMovieDecision = async (
   );
   console.log(`🔑 Using token: ${token}`);
 
-  const response = await axios.get<{
-    movieData: MovieData;
-    decision: { decision: string; explanation?: string };
-  }>(`${API_BASE_URL}/api/movies/decision`, {
-    params: { movie: title },
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  try {
+    const response = await axios.get<{
+      movieData: MovieData;
+      decision: { decision: string; explanation?: string };
+      aiUnavailable?: boolean;
+      message?: string;
+    }>(`${API_BASE_URL}/api/movies/decision`, {
+      params: { movie: title },
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  console.log("📥 Received response from /api/movies/decision:", response.data);
+    console.log("📥 Received response from /api/movies/decision:", response.data);
 
-  const { movieData, decision } = response.data;
-  return {
-    movieData: {
-      ...movieData,
-      oscars: movieData.oscars.map((o) => ({
-        originalCategory: o.originalCategory,
-        fullCategory: o.fullCategory,
-        isWin: o.isWin,
-      })),
-    },
-    decision: decision.decision,
-    explanation: decision.explanation ?? "No explanation provided.",
-  };
+    // If AI unavailable, propagate that up
+    if (response.data.aiUnavailable) {
+      return {
+        aiUnavailable: true,
+        message: response.data.message,
+      };
+    }
+
+    const { movieData, decision } = response.data;
+    return {
+      movieData: {
+        ...movieData,
+        oscars: movieData.oscars.map((o) => ({
+          originalCategory: o.originalCategory,
+          fullCategory: o.fullCategory,
+          isWin: o.isWin,
+        })),
+      },
+      decision: decision.decision,
+      explanation: decision.explanation ?? "No explanation provided.",
+    };
+  } catch (err: unknown) {
+    // Type guard for AxiosError
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "response" in err &&
+      typeof (err as { response?: unknown }).response === "object" &&
+      (err as { response?: { data?: unknown } }).response !== null &&
+      "data" in (err as { response: { data?: unknown } }).response!
+    ) {
+      const data = (err as { response: { data?: unknown } }).response.data as Record<string, unknown>;
+      if (data && data.aiUnavailable) {
+        return {
+          aiUnavailable: true,
+          message: typeof data.message === "string" ? data.message : undefined,
+        };
+      }
+    }
+    throw err;
+  }
 };

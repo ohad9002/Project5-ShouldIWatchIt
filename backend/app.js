@@ -40,10 +40,22 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // ⚠️ CORS setup: allow your front-end, credentials, and Authorization header
+const allowedOrigins =
+  process.env.NODE_ENV === 'production'
+    ? [CLIENT_ORIGIN]
+    : [CLIENT_ORIGIN, 'http://localhost:5173'];
+
 const corsOptions = {
-  origin: CLIENT_ORIGIN,
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-  allowedHeaders: ['Content-Type','Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
 // respond to preflight requests for all routes

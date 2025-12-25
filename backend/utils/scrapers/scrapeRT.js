@@ -72,13 +72,36 @@ async function scrapeRT(page, movieTitle) {
       const getText = sel => document.querySelector(sel)?.textContent.trim() || 'N/A';
       const getCat  = label => {
         for (const el of document.querySelectorAll('.category-wrap')) {
-          if (el.querySelector('dt rt-text.key')?.innerText.trim() === label) {
+          if (
+            el.querySelector('dt rt-text.key')?.innerText.trim() === label
+          ) {
             return Array.from(el.querySelectorAll('dd [data-qa="item-value"]'))
                         .map(x => x.textContent.trim());
           }
         }
         return [];
       };
+
+      // --- NEW: Only "Release Date (Theaters)" ---
+      function getReleaseDate() {
+        // Try the old way first
+        let date =
+          Array.from(document.querySelectorAll('rt-text[slot="metadataProp"]'))
+            .map(e => e.textContent.trim())
+            .find(t => /released/i.test(t));
+        if (date) return date;
+
+        // Only look for "Release Date (Theaters)"
+        for (const el of document.querySelectorAll('.category-wrap')) {
+          const dt = el.querySelector('dt rt-text.key');
+          if (dt && dt.textContent.trim() === "Release Date (Theaters)") {
+            const dd = el.querySelector('dd [data-qa="item-value"]');
+            if (dd) return dd.textContent.trim();
+          }
+        }
+        return 'N/A';
+      }
+      // --- END NEW ---
 
       // 1) DOM-based extraction
       if (document.querySelector('media-scorecard') || document.querySelector('score-board')) {
@@ -94,9 +117,7 @@ async function scrapeRT(page, movieTitle) {
                            || document.querySelector('score-board')?.getAttribute('audiencescore')
                            || 'N/A',
           genres:        getCat('Genre'),
-          releaseDate:   Array.from(document.querySelectorAll('rt-text[slot="metadataProp"]'))
-                             .map(e => e.textContent.trim())
-                             .find(t => /released/i.test(t)) || 'N/A',
+          releaseDate:   getReleaseDate(),
           image:         document.querySelector('media-scorecard rt-img[slot="posterImage"]')?.getAttribute('src')
                            || document.querySelector('img.posterImage')?.getAttribute('src')
                            || 'N/A'

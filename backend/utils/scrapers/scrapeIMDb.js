@@ -123,12 +123,29 @@ async function scrapeIMDb(page, movieTitle) {
     const data = await page.evaluate(() => {
       const getText = sel => document.querySelector(sel)?.textContent.trim() || 'N/A';
 
+      let releaseDate = 'N/A';
+      // Try to get release date from the detail page
+      const releaseDateEl = document.querySelector('a[href*="/releaseinfo"]');
+      if (releaseDateEl) {
+        releaseDate = releaseDateEl.textContent.trim();
+      } else {
+        // fallback: try JSON-LD
+        const script = document.querySelector('script[type="application/ld+json"]');
+        if (script) {
+          try {
+            const j = JSON.parse(script.textContent);
+            releaseDate = j.datePublished || 'N/A';
+          } catch (e) {}
+        }
+      }
+
       if (document.querySelector('[data-testid="hero-rating-bar__aggregate-rating__score"]')) {
         return {
           title:  getText('h1'),
           rating: getText('[data-testid="hero-rating-bar__aggregate-rating__score"] span'),
           image:  document.querySelector('.ipc-image')?.src || 'N/A',
-          url:    window.location.href
+          url:    window.location.href,
+          releaseDate
         };
       }
 

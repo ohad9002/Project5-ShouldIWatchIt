@@ -11,6 +11,7 @@ const Home = ({ resetTrigger }: { resetTrigger: boolean }) => {
     decision: string;
     explanation: string;
   } | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +35,7 @@ const Home = ({ resetTrigger }: { resetTrigger: boolean }) => {
   const handleSearch = async () => {
     console.log("🔍 Starting search for movie:", query);
     setError(null);
+    setAiError(null);
     setIsLoading(true);
 
     try {
@@ -54,15 +56,27 @@ const Home = ({ resetTrigger }: { resetTrigger: boolean }) => {
 
       if (user?.token) {
         console.log("🔑 User is logged in. Fetching AI decision...");
-        const decisionResponse = await fetchMovieDecision(query, user.token);
-        console.log(
-          "📥 AI Decision received from fetchMovieDecision:",
-          decisionResponse,
-        );
-        setAiDecision({
-          decision: decisionResponse.decision,
-          explanation: decisionResponse.explanation,
-        });
+        try {
+          const decisionResponse = await fetchMovieDecision(query, user.token);
+          if (decisionResponse.aiUnavailable) {
+            setAiError(
+              decisionResponse.message ||
+                "AI recommendation is temporarily unavailable. Please try again later."
+            );
+            setAiDecision(null);
+          } else {
+            setAiDecision({
+              decision: decisionResponse.decision ?? "",
+              explanation: decisionResponse.explanation ?? "No explanation provided.",
+            });
+            setAiError(null);
+          }
+        } catch {
+          setAiError(
+            "AI recommendation is temporarily unavailable. Please try again later."
+          );
+          setAiDecision(null);
+        }
       } else {
         console.log("ℹ️ User is not logged in. Skipping AI decision fetch.");
       }
@@ -140,12 +154,19 @@ const Home = ({ resetTrigger }: { resetTrigger: boolean }) => {
         {error && <p style={{ color: "var(--primary-color)" }}>{error}</p>}
         {movieData && (
           <div className="mt-6">
+            {/* Show AI error if present */}
+            {aiError && (
+              <div className="mb-6">
+                <p className="text-red-600 font-semibold">
+                  {aiError}
+                </p>
+              </div>
+            )}
+
+            {/* Show AI decision if available */}
             {aiDecision && (
               <div className="mb-6">
-                <p
-                  className="text-xl font-bold"
-                  style={{ color: "var(--primary-color)" }}
-                >
+                <p className="text-xl font-bold" style={{ color: "var(--primary-color)" }}>
                   AI Decision: {aiDecision.decision}
                 </p>
                 <p>{aiDecision.explanation}</p>
@@ -202,12 +223,18 @@ const Home = ({ resetTrigger }: { resetTrigger: boolean }) => {
         {!movieData && !isLoading && !error && (
           <div className="mb-6 text-lg">
             <p>
-              Not sure if a movie is worth your time? <strong>ShouldIWatchIt</strong> helps you decide by combining ratings from IMDb and Rotten Tomatoes, Oscar wins, and your personal preferences.
+              Not sure if a movie is worth your time?{" "}
+              <strong>ShouldIWatchIt</strong> helps you decide by combining
+              ratings from IMDb and Rotten Tomatoes, Oscar wins, and your
+              personal preferences.
               <br />
-              Enter a movie title above to get a smart, AI-powered calculation and recommendation.
+              Enter a movie title above to get a smart, AI-powered calculation
+              and recommendation.
             </p>
             <p className="mt-4 font-semibold text-primary">
-              For the full experience—including personalized recommendations and saving your preferences—please <strong>sign up</strong> and <strong>log in</strong>.
+              For the full experience—including personalized recommendations and
+              saving your preferences—please <strong>sign up</strong> and{" "}
+              <strong>log in</strong>.
             </p>
           </div>
         )}

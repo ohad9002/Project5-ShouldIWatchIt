@@ -5,7 +5,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function generateMovieDecision(movieData, userPrefs, finalScore) {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const shouldWatch = finalScore >= 50 ? "Yes" : "No";
 
@@ -62,13 +62,23 @@ async function generateMovieDecision(movieData, userPrefs, finalScore) {
 
     console.log("📌 Prompt sent to AI:", prompt);
 
-    const result = await model.generateContent(prompt);
-    console.log("📥 AI Response:", result.response.text());
+    try {
+        const result = await model.generateContent(prompt);
+        console.log("📥 AI Response:", result.response.text());
 
-    return {
-        decision: shouldWatch,
-        explanation: result.response.text().trim(),
-    };
+        return {
+            decision: shouldWatch,
+            explanation: result.response.text().trim(),
+        };
+    } catch (error) {
+        if (error.status === 429) {
+            return {
+                aiUnavailable: true,
+                message: "AI recommendation is temporarily unavailable due to usage limits. Please try again later."
+            };
+        }
+        throw error;
+    }
 }
 
 module.exports = { generateMovieDecision };
