@@ -61,19 +61,20 @@ const Home = ({ resetTrigger }: { resetTrigger: boolean }) => {
           if (decisionResponse.aiUnavailable) {
             setAiError(
               decisionResponse.message ||
-                "AI recommendation is temporarily unavailable. Please try again later."
+                "AI recommendation is temporarily unavailable. Please try again later.",
             );
             setAiDecision(null);
           } else {
             setAiDecision({
               decision: decisionResponse.decision ?? "",
-              explanation: decisionResponse.explanation ?? "No explanation provided.",
+              explanation:
+                decisionResponse.explanation ?? "No explanation provided.",
             });
             setAiError(null);
           }
         } catch {
           setAiError(
-            "AI recommendation is temporarily unavailable. Please try again later."
+            "AI recommendation is temporarily unavailable. Please try again later.",
           );
           setAiDecision(null);
         }
@@ -157,16 +158,17 @@ const Home = ({ resetTrigger }: { resetTrigger: boolean }) => {
             {/* Show AI error if present */}
             {aiError && (
               <div className="mb-6">
-                <p className="text-red-600 font-semibold">
-                  {aiError}
-                </p>
+                <p className="text-red-600 font-semibold">{aiError}</p>
               </div>
             )}
 
             {/* Show AI decision if available */}
             {aiDecision && (
               <div className="mb-6">
-                <p className="text-xl font-bold" style={{ color: "var(--primary-color)" }}>
+                <p
+                  className="text-xl font-bold"
+                  style={{ color: "var(--primary-color)" }}
+                >
                   AI Decision: {aiDecision.decision}
                 </p>
                 <p>{aiDecision.explanation}</p>

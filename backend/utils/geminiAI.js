@@ -58,6 +58,7 @@ async function generateMovieDecision(movieData, userPrefs, finalScore) {
     Provide a short explanation why the user should or should not watch this movie, considering their preferences and the movie's attributes.
     Speak to the user in second person.
     Don't go against the shouldIWatch decision.
+    Try to be use as many specifities from the movie data and user preferences as possible.
     `;
 
     console.log("📌 Prompt sent to AI:", prompt);

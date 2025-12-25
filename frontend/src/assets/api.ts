@@ -99,7 +99,10 @@ export const fetchMovieDecision = async (
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    console.log("📥 Received response from /api/movies/decision:", response.data);
+    console.log(
+      "📥 Received response from /api/movies/decision:",
+      response.data,
+    );
 
     // If AI unavailable, propagate that up
     if (response.data.aiUnavailable) {
@@ -132,7 +135,8 @@ export const fetchMovieDecision = async (
       (err as { response?: { data?: unknown } }).response !== null &&
       "data" in (err as { response: { data?: unknown } }).response!
     ) {
-      const data = (err as { response: { data?: unknown } }).response.data as Record<string, unknown>;
+      const data = (err as { response: { data?: unknown } }).response
+        .data as Record<string, unknown>;
       if (data && data.aiUnavailable) {
         return {
           aiUnavailable: true,
